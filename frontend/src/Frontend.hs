@@ -24,8 +24,8 @@ data Food = Food
   }
   deriving (Eq, Show, Ord)
 
-basmaticRice :: Food
-basmaticRice = Food "Rice (per gram)" 3.555 0 0.8 0.0888
+basmatiRice :: Food
+basmatiRice = Food "Rice (per gram)" 3.555 0 0.8 0.0888
 
 largeEgg :: Food
 largeEgg = Food "One large egg" 70 5 1 6
@@ -76,7 +76,7 @@ frontend :: Widget x ()
 frontend = do
   el "h1" $ text "Nutrition calculator"
   eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
-  rice <- fmap (fmap $ repeatFood basmaticRice) <$> getFoodInput basmaticRice
+  rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
 
   let total = zipDynWith (liftA2 addFood) eggs rice
 
@@ -86,6 +86,3 @@ frontend = do
       Nothing -> text "nothing available"
       Just f -> showFood f
   return ()
-
-calc :: Fractional a => a -> a -> a
-calc eggs riceGrams = eggs * 78 + riceGrams * 3.65
