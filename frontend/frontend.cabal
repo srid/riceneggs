@@ -22,6 +22,7 @@ executable frontend
   hs-source-dirs: src
   build-depends: base
                , common
+               , data-default
                , reflex-dom
                , static
                , text
