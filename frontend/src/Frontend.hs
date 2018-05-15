@@ -35,7 +35,7 @@ getFoodInput food = do
   val <- el "div" $ do
     el "label" $ text $ _food_desc food
     showFood food
-    value <$> textInput def
+    value <$> textInput (def & textInputConfig_initialValue .~ "1")
   return $ fmap (readMaybe . T.unpack) val
 
 repeatFood :: Food -> Double -> Food
