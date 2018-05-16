@@ -74,7 +74,7 @@ showFood food = el "table" $ do
 
 frontend :: Widget x ()
 frontend = do
-  el "h1" $ text "Nutrition calculator"
+  el "h1" $ text "You eat rice n eggs?"
   eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
   rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
 
