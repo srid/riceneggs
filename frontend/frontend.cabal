@@ -11,8 +11,6 @@ library
                , reflex-dom
                , static
                , text
-  if !impl(ghcjs)
-    build-depends: obelisk-run
 
   exposed-modules:
     Frontend
