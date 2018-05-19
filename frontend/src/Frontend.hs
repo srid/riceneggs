@@ -20,6 +20,8 @@ import Static
 
 data Food = Food
   { _food_desc :: Text
+  , _food_units :: Double
+  , _food_unit :: Text
   , _food_calories :: Double
   , _food_fat :: Double
   , _food_carbs :: Double
@@ -28,26 +30,33 @@ data Food = Food
   deriving (Eq, Show, Ord)
 
 basmatiRice :: Food
-basmatiRice = Food "Rice (per gram)" 3.555 0 0.8 0.0888
+basmatiRice = Food "Rice" 10 "grams" 35.56 0 8 0.889
 
 largeEgg :: Food
-largeEgg = Food "One large egg" 70 5 1 6
+largeEgg = Food "Large egg" 1 "units" 70 5 1 6
 
 ribeyeSteak :: Food
-ribeyeSteak = Food "Ribeye steak 100g" 291 22 0 24
+ribeyeSteak = Food "Ribeye steak" 50 "grams" 145 11 0 12
 
 getFoodInput :: MonadWidget t m => Food -> m (Dynamic t (Maybe Double))
 getFoodInput food = do
-  val <- divClass "ui card" $ divClass "content" $ do
-    divClass "header" $ text $ _food_desc food
+  divClass "ui piled segment" $ do
+    divClass "ui header" $ el "h3" $ text $ _food_desc food
     divClass "description" $ do
       showFood food
-      value <$> textInput (def & textInputConfig_initialValue .~ "0")
-  return $ fmap (readMaybe . T.unpack) val
+      val :: Dynamic t (Maybe Double) <- fmap (fmap $ readMaybe . T.unpack) $ divClass "ui input" $ value <$> textInput
+        (def & textInputConfig_initialValue .~ "0"
+             & textInputConfig_inputType .~ "range"
+             & textInputConfig_attributes .~ constDyn ("min" =: "0" <> "max" =: "100"))
+      dynText $ T.pack . show <$> fmap (\v -> v * _food_units food) <$> val
+      text $ " " <> _food_unit food <> " of " <> _food_desc food
+      return val
 
 repeatFood :: Food -> Double -> Food
 repeatFood food n = Food
   (_food_desc food <> " (" <> (T.pack $ show n) <> " times)")
+  (n * _food_units food )
+  (_food_unit food)
   (n * _food_calories food )
   (n * _food_fat food )
   (n * _food_carbs food )
@@ -56,20 +65,19 @@ repeatFood food n = Food
 addFood :: Food -> Food -> Food
 addFood f1 f2 = Food
   (_food_desc f1 <> " + " <> _food_desc f2)
+  (_food_units f1 + _food_units f2) -- XXX: this makes no sense
+  ("N/A")
   (_food_calories f1 + _food_calories f2)
   (_food_fat f1 + _food_fat f2)
   (_food_carbs f1 + _food_carbs f2)
   (_food_protein f1 + _food_protein f2)
 
 instance Monoid Food where
-  mempty = Food "Nothing" 0 0 0 0
+  mempty = Food "Nothing" 1 "units" 0 0 0 0
   mappend = addFood
 
 showFood :: MonadWidget t m => Food -> m ()
-showFood food = el "table" $ do
-  el "tr" $ do
-    el "td" $ text "Food"
-    el "td" $ text $ _food_desc food
+showFood food = elClass "table" "ui definition table" $ do
   el "tr" $ do
     el "td" $ text "Calories"
     el "td" $ text $ T.pack $ show $ _food_calories food
@@ -89,7 +97,8 @@ frontend = mainWidgetWithHead' (const h, const b)
     h = elAttr "link" ("rel" =: "stylesheet" <> "href" =: static @"semantic.min.css") blank
     b = divClass "ui container" $ do
       elClass "h1" "ui header"  $ text "Rice 'n eggs"
-      divClass "ui content" $ divClass "ui segment" $ do
+      el "p" $ text "Nutrition calculator"
+      divClass "ui segments" $ divClass "ui segment" $ do
         eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
         rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
         steak <- fmap (fmap $ repeatFood ribeyeSteak) <$> getFoodInput ribeyeSteak
