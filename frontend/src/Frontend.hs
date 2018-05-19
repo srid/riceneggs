@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 module Frontend where
 
 import Control.Applicative (liftA2)
@@ -11,6 +13,7 @@ import Data.Default (def)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
+import Text.Printf (printf)
 import Text.Read (readMaybe)
 
 import Language.Javascript.JSaddle (JSM)
@@ -40,10 +43,10 @@ ribeyeSteak = Food "Ribeye steak" 50 "grams" 145 11 0 12
 
 getFoodInput :: MonadWidget t m => Food -> m (Dynamic t (Maybe Double))
 getFoodInput food = do
-  divClass "ui piled segment" $ do
+  divClass "ui segment" $ do
     divClass "ui header" $ el "h3" $ text $ _food_desc food
     divClass "description" $ do
-      showFood food
+      -- showFood food
       val :: Dynamic t (Maybe Double) <- fmap (fmap $ readMaybe . T.unpack) $ divClass "ui input" $ value <$> textInput
         (def & textInputConfig_initialValue .~ "0"
              & textInputConfig_inputType .~ "range"
@@ -98,19 +101,24 @@ frontend = mainWidgetWithHead' (const h, const b)
     b = divClass "ui container" $ do
       elClass "h1" "ui header"  $ text "Rice 'n eggs"
       el "p" $ text "Nutrition calculator"
-      divClass "ui segments" $ divClass "ui segment" $ do
+      totalDyn <- divClass "ui raised segments" $ do
         eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
         rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
         steak <- fmap (fmap $ repeatFood ribeyeSteak) <$> getFoodInput ribeyeSteak
+        return $ fmap (fmap mconcat . sequence) $ sequence [eggs, rice, steak]
 
-        -- let foods = sequence [eggs, rice, steak]
+      dyn_ $ ffor totalDyn $ \total -> do
+        showAttr "Calories" "purple" $ fmap _food_calories total
+        showAttr "Fat" "yellow" $ fmap _food_fat total
+        showAttr "Carbs" "red" $ fmap _food_carbs total
+        showAttr "Protein" "brown" $ fmap _food_protein total
 
-        -- let total = zipDynWith (liftA2 addFood) eggs rice
-        let total = fmap (fmap mconcat) $ fmap sequence $ sequence [eggs, rice, steak]
+    showAttr name color attr = circularSegment color name $ do
 
-        el "div" $ do
-          el "b" $ text "Total calories:"
-          dyn $ ffor total $ \case
-            Nothing -> text "nothing available"
-            Just f -> showFood f
-        return ()
+      text $ maybe "N/A" T.pack $ fmap (printf "%0.2v" :: Double -> String) attr
+
+circularSegment :: MonadWidget t m => Text -> Text -> m () -> m ()
+circularSegment color h b = divClass ("ui " <> color <> " inverted circular segment") $ do
+  elClass "h2" "ui inverted header" $ do
+    text h
+    divClass "sub header" $ el "p" $ b
