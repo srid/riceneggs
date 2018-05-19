@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeFamilies #-}
 module Frontend where
 
-import Control.Applicative (liftA2)
 import Data.Default (def)
 import Data.Monoid ((<>))
 import Data.Text (Text)
@@ -43,7 +42,7 @@ ribeyeSteak = Food "Ribeye steak" 50 "grams" 145 11 0 12
 
 getFoodInput :: MonadWidget t m => Food -> m (Dynamic t (Maybe Double))
 getFoodInput food = do
-  divClass "ui segment" $ do
+  divClass "ui pink segment" $ do
     rec _ <- divClass "ui header" $ el "h3" $ dynText $ fmap (maybe "" mkTitle) val
         val <- divClass "description" $ do
           fmap (fmap $ readMaybe . T.unpack) $ divClass "ui input" $ value <$> textInput
@@ -102,7 +101,7 @@ frontend :: JSM ()
 frontend = mainWidgetWithHead' (const h, const b)
   where
     h = elAttr "link" ("rel" =: "stylesheet" <> "href" =: static @"semantic.min.css") blank
-    b = divClass "ui container" $ do
+    b = divClass "ui container" $ divClass "ui inverted olive segment" $ do
       elClass "h1" "ui header"  $ text "Rice 'n eggs"
       el "p" $ text "Nutrition calculator"
       totalDyn <- divClass "ui raised segments" $ do
@@ -111,18 +110,17 @@ frontend = mainWidgetWithHead' (const h, const b)
         steak <- fmap (fmap $ repeatFood ribeyeSteak) <$> getFoodInput ribeyeSteak
         return $ fmap (fmap mconcat . sequence) $ sequence [eggs, rice, steak]
 
-      dyn_ $ ffor totalDyn $ \total -> do
-        showAttr "Calories" "purple" $ fmap _food_calories total
+      dyn_ $ ffor totalDyn $ \total -> divClass "ui four column grid" $ do
+        showAttr "Cal." "purple" $ fmap _food_calories total
         showAttr "Fat" "yellow" $ fmap _food_fat total
-        showAttr "Carbs" "red" $ fmap _food_carbs total
-        showAttr "Protein" "brown" $ fmap _food_protein total
+        showAttr "Carb" "red" $ fmap _food_carbs total
+        showAttr "Prot." "brown" $ fmap _food_protein total
 
-    showAttr name color attr = circularSegment color name $ do
-
+    showAttr name color attr = divClass "column" $ circularSegment color name $ do
       text $ maybe "N/A" T.pack $ fmap (printf "%0.2v" :: Double -> String) attr
 
 circularSegment :: MonadWidget t m => Text -> Text -> m () -> m ()
-circularSegment color h b = divClass ("ui " <> color <> " inverted circular segment") $ do
+circularSegment color h b = divClass ("ui " <> color <> " inverted segment") $ do
   elClass "h2" "ui inverted header" $ do
     text h
     divClass "sub header" $ el "p" $ b
