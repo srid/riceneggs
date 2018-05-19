@@ -1,8 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -44,16 +44,20 @@ ribeyeSteak = Food "Ribeye steak" 50 "grams" 145 11 0 12
 getFoodInput :: MonadWidget t m => Food -> m (Dynamic t (Maybe Double))
 getFoodInput food = do
   divClass "ui segment" $ do
-    divClass "ui header" $ el "h3" $ text $ _food_desc food
-    divClass "description" $ do
-      -- showFood food
-      val :: Dynamic t (Maybe Double) <- fmap (fmap $ readMaybe . T.unpack) $ divClass "ui input" $ value <$> textInput
-        (def & textInputConfig_initialValue .~ "0"
-             & textInputConfig_inputType .~ "range"
-             & textInputConfig_attributes .~ constDyn ("min" =: "0" <> "max" =: "100"))
-      dynText $ T.pack . show <$> fmap (\v -> v * _food_units food) <$> val
-      text $ " " <> _food_unit food <> " of " <> _food_desc food
-      return val
+    rec _ <- divClass "ui header" $ el "h3" $ dynText $ fmap (maybe "" mkTitle) val
+        val <- divClass "description" $ do
+          fmap (fmap $ readMaybe . T.unpack) $ divClass "ui input" $ value <$> textInput
+                  (def & textInputConfig_initialValue .~ "0"
+                       & textInputConfig_inputType .~ "range"
+                       & textInputConfig_attributes .~ constDyn ("min" =: "0" <> "max" =: "100"))
+    return val
+  where
+    mkTitle units = T.unwords
+      [ T.pack $ show $ (units * _food_units food)
+      , _food_unit food
+      , "of"
+      , _food_desc food
+      ]
 
 repeatFood :: Food -> Double -> Food
 repeatFood food n = Food
