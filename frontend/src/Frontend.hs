@@ -2,6 +2,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Frontend where
 
 import Control.Applicative (liftA2)
@@ -11,7 +13,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Read (readMaybe)
 
-import Reflex.Dom
+import Language.Javascript.JSaddle (JSM)
+import Reflex.Dom.Core
 
 import Static
 
@@ -30,12 +33,16 @@ basmatiRice = Food "Rice (per gram)" 3.555 0 0.8 0.0888
 largeEgg :: Food
 largeEgg = Food "One large egg" 70 5 1 6
 
+ribeyeSteak :: Food
+ribeyeSteak = Food "Ribeye steak 100g" 291 22 0 24
+
 getFoodInput :: MonadWidget t m => Food -> m (Dynamic t (Maybe Double))
 getFoodInput food = do
-  val <- el "div" $ do
-    el "label" $ text $ _food_desc food
-    showFood food
-    value <$> textInput (def & textInputConfig_initialValue .~ "1")
+  val <- divClass "ui card" $ divClass "content" $ do
+    divClass "header" $ text $ _food_desc food
+    divClass "description" $ do
+      showFood food
+      value <$> textInput (def & textInputConfig_initialValue .~ "0")
   return $ fmap (readMaybe . T.unpack) val
 
 repeatFood :: Food -> Double -> Food
@@ -53,6 +60,10 @@ addFood f1 f2 = Food
   (_food_fat f1 + _food_fat f2)
   (_food_carbs f1 + _food_carbs f2)
   (_food_protein f1 + _food_protein f2)
+
+instance Monoid Food where
+  mempty = Food "Nothing" 0 0 0 0
+  mappend = addFood
 
 showFood :: MonadWidget t m => Food -> m ()
 showFood food = el "table" $ do
@@ -72,17 +83,25 @@ showFood food = el "table" $ do
     el "td" $ text "Protein"
     el "td" $ text $ T.pack $ show $ _food_protein food
 
-frontend :: Widget x ()
-frontend = do
-  el "h1" $ text "You eat rice n eggs?"
-  eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
-  rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
+frontend :: JSM ()
+frontend = mainWidgetWithHead' (const h, const b)
+  where
+    h = elAttr "link" ("rel" =: "stylesheet" <> "href" =: static @"semantic.min.css") blank
+    b = divClass "ui container" $ do
+      elClass "h1" "ui header"  $ text "Rice 'n eggs"
+      divClass "ui content" $ divClass "ui segment" $ do
+        eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
+        rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
+        steak <- fmap (fmap $ repeatFood ribeyeSteak) <$> getFoodInput ribeyeSteak
 
-  let total = zipDynWith (liftA2 addFood) eggs rice
+        -- let foods = sequence [eggs, rice, steak]
 
-  el "div" $ do
-    el "b" $ text "Total calories:"
-    dyn $ ffor total $ \case
-      Nothing -> text "nothing available"
-      Just f -> showFood f
-  return ()
+        -- let total = zipDynWith (liftA2 addFood) eggs rice
+        let total = fmap (fmap mconcat) $ fmap sequence $ sequence [eggs, rice, steak]
+
+        el "div" $ do
+          el "b" $ text "Total calories:"
+          dyn $ ffor total $ \case
+            Nothing -> text "nothing available"
+            Just f -> showFood f
+        return ()

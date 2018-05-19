@@ -8,6 +8,7 @@ library
   build-depends: base
                , common
                , data-default
+               , jsaddle
                , reflex-dom
                , static
                , text
@@ -22,6 +23,7 @@ executable frontend
   build-depends: base
                , common
                , data-default
+               , jsaddle
                , reflex-dom
                , static
                , text
