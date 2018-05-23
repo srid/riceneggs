@@ -97,8 +97,8 @@ showFood food = elClass "table" "ui definition table" $ do
     el "td" $ text "Protein"
     el "td" $ text $ T.pack $ show $ _food_protein food
 
-frontend :: JSM ()
-frontend = mainWidgetWithHead' (const h, const b)
+frontend :: (StaticWidget x (), Widget x ())
+frontend = (h, b)
   where
     h = elAttr "link" ("rel" =: "stylesheet" <> "href" =: static @"semantic.min.css") blank
     b = divClass "ui container" $ divClass "ui inverted olive segment" $ do
@@ -117,7 +117,7 @@ frontend = mainWidgetWithHead' (const h, const b)
         showAttr "Prot." "brown" $ fmap _food_protein total
 
     showAttr name color attr = divClass "column" $ circularSegment color name $ do
-      text $ maybe "N/A" T.pack $ fmap (printf "%0.2v" :: Double -> String) attr
+      text $ maybe "N/A" T.pack $ fmap (printf "%0.2v") attr
 
 circularSegment :: MonadWidget t m => Text -> Text -> m () -> m ()
 circularSegment color h b = divClass ("ui " <> color <> " inverted segment") $ do

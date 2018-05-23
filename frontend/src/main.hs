@@ -2,4 +2,4 @@ import Frontend
 import Reflex.Dom
 
 main :: IO ()
-main = run frontend
+main = mainWidget $ snd frontend
