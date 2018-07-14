@@ -31,8 +31,12 @@ data Food = Food
   }
   deriving (Eq, Show, Ord)
 
-basmatiRice :: Food
-basmatiRice = Food "Rice" 10 "grams" 35.56 0 8 0.889
+-- basmatiRice :: Food
+-- basmatiRice = Food "Rice" 10 "grams" 35.56 0 8 0.889
+
+-- President choice thick cut bacon (1kg)
+thickBacon :: Food
+thickBacon = Food "Bacon" 1 "thick slice" 190 18 1 5
 
 largeEgg :: Food
 largeEgg = Food "Large egg" 1 "units" 70 5 1 6
@@ -106,7 +110,7 @@ frontend = (h, b)
       el "p" $ text "Nutrition calculator"
       totalDyn <- divClass "ui raised segments" $ do
         eggs <- fmap (fmap $ repeatFood largeEgg) <$> getFoodInput largeEgg
-        rice <- fmap (fmap $ repeatFood basmatiRice) <$> getFoodInput basmatiRice
+        rice <- fmap (fmap $ repeatFood thickBacon) <$> getFoodInput thickBacon
         steak <- fmap (fmap $ repeatFood ribeyeSteak) <$> getFoodInput ribeyeSteak
         return $ fmap (fmap mconcat . sequence) $ sequence [eggs, rice, steak]
 
